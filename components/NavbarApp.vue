@@ -6,7 +6,7 @@
         <div class="flex flex-1">
           <div class="pr-3">
             <button
-              v-if="showBack"
+              v-if="showHome"
               @click="routerHome()"
               class="flex items-center text-gray-700 hover:text-gray-900"
             >
@@ -60,7 +60,11 @@ export default {
   props: {
     showBack: {
       type: Boolean,
-      default: true,
+      default: false,
+    },
+    showHome: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

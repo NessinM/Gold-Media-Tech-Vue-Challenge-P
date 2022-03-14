@@ -1,5 +1,4 @@
 import axios from "axios";
-
 //to handle state
 const state = {
   books: [],
@@ -9,7 +8,7 @@ const state = {
     message: "",
   },
   filterBy      : "title",
-  filterValue   : "Fantastic Mr Fox",
+  filterValue   : "",
   keyBookDetails: "",
   detailsBook   : {},
 };
@@ -30,20 +29,20 @@ const actions = {
   getSearchBooks({ commit, state }) {
     commit("SET_TRANSACTION", {
       isLoading: true,
-      message  : `Obteniendo listado de libros...`,
+      message  : `Getting book list by ${state.filterBy}:${state.filterValue}`,
     });
     const url = `http://openlibrary.org/search.json?${state.filterBy}=${state.filterValue}`;
     axios.get(url).then((response) => {
       commit("SET_BOOKS", response.data.docs);
       commit("SET_TRANSACTION", { isLoading: false, message: "" });
     }).catch((error) => {
-      alert(`Error al intentar recuperar informacion de la API: ${error}`)
+      notify(this, 'error', 'Error', `Error when trying to retrieve information from the API: ${error}`)
     })
   },
   getDetailsBook({ commit, state }) {
     commit("SET_TRANSACTION", {
       isLoading: true,
-      message  : `Obteniendo detalles del libro  ${state.keyBookDetails}...`,
+      message  : `Getting book details  ${state.keyBookDetails}...`,
     });
     const url = `https://openlibrary.org${state.keyBookDetails}.json`;
     return new Promise((resolve, reject) => {
@@ -55,7 +54,7 @@ const actions = {
         resolve()
       }).catch((error) => {
         reject(error)
-        alert(`Error al intentar recuperar informacion de la API: ${error}` )
+        notify(this, 'error', 'Error', `Error when trying to retrieve information from the API: ${error}`)
       })
     })
   },
@@ -72,10 +71,26 @@ const actions = {
     commit("SET_KEY_DETAILS_BOOK", value);
   },
   addFavorite({ commit }, item) {
-    commit("ADD_FAVORITE", item);
+    return new Promise((resolve, reject) => {
+      const existe = state.favorites.findIndex((e) => e.key === item.key);
+      if (existe === -1) {
+        commit("ADD_FAVORITE", item);
+        resolve()
+      } else {
+        reject(`El libro ${payloand.title} ya se encuentra agregado a favoritos`)
+      }
+    })
   },
   removeFavorite({ commit }, item) {
-    commit("REMOVE_FAVORITE", item);
+    return new Promise((resolve, reject) => {
+      const existe = state.favorites.findIndex((e) => e.key === item.key);
+      if (existe !== -1) {
+        commit("REMOVE_FAVORITE", existe);
+        resolve()
+      } else {
+        reject('Error: El libro no se encuentra en los favoritos')
+      }
+    })
   },
 };
 
@@ -100,16 +115,10 @@ const mutations = {
     state.transaction = payloand;
   },
   ADD_FAVORITE(state, payloand) {
-    const existe = state.favorites.findIndex((e) => e.key === payloand.key);
-    if (existe === -1) state.favorites.push(payloand);
-    else
-      console.log(`El libro ${payloand.title} ya se encuentra agregado a favoritos`)
-
+    state.favorites.push(payloand);
   },
-  REMOVE_FAVORITE(state, payloand) {
-    const existe = state.favorites.findIndex((e) => e.key === payloand.key);
-    if (existe !== -1) state.favorites.splice(existe, 1);
-    console.log(`El libro ${payloand.title} fue removido de los favoritos`)
+  REMOVE_FAVORITE(state, position) {
+    state.favorites.splice(position, 1);
   },
 };
 

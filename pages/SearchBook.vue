@@ -1,6 +1,6 @@
 <template>
   <section class="min-h-screen flex flex-col">
-    <header-navegacion :show-back="false"></header-navegacion>
+    <header-navegacion></header-navegacion>
 
     <div class="flex flex-1 items-center justify-center bg-gray-200">
       <div
@@ -25,6 +25,7 @@
               <input
                 type="text"
                 ref="searchText"
+                @keyup.enter="setFiltersGoListPage()"
                 class="
                   h-14
                   w-96
@@ -178,6 +179,7 @@
 </template>
 <script>
 import NavbarComponent from "@/components/NavbarApp.vue";
+import { notify } from "../utils/general";
 export default {
   components: {
     "header-navegacion": NavbarComponent,
@@ -188,6 +190,7 @@ export default {
         return this.$store.getters.filterBy;
       },
       set(value) {
+        this.$refs.searchText.focus();
         this.$store.dispatch("setFilterValue", "");
         this.$store.dispatch("setFilterBy", value);
       },
@@ -201,20 +204,36 @@ export default {
       },
     },
   },
+  mounted() {
+    this.$store.dispatch("setListBooks", []);
+    this.$refs.searchText.focus();
+  },
   methods: {
     setFiltersGoListPage() {
       const vm = this;
       if (!vm.$store.getters.filterBy) {
-        alert("El filterBy se encuentra vacio");
+        notify(this, "error", "Error", "Filter type is empty");
         return;
       }
 
       if (!vm.$store.getters.filterValue) {
-        alert("El valor del filtro se encuentra vacio");
+        notify(
+          this,
+          "error",
+          "Error",
+          "Filter value is empty"
+        );
         vm.$refs.searchText.focus();
         return;
       }
-      vm.$router.push("/books");
+
+      vm.$router.push({
+        path: "/books",
+        query: {
+          filterBy: vm.$store.getters.filterBy,
+          filterValue: vm.$store.getters.filterValue,
+        },
+      });
     },
   },
 };

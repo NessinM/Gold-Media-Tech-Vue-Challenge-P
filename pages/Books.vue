@@ -1,6 +1,7 @@
 <template>
   <div>
-    <header-navegacion class="mb-6"></header-navegacion>
+    <notifications class="mt-20" position="top center" />
+    <header-navegacion :show-home="true" class="mb-6"></header-navegacion>
     <button
       v-if="books.length && !gettersTransaction.isLoading"
       @click="updateListBooks()"
@@ -49,15 +50,25 @@
 <script>
 import ItemBookComponent from "@/components/ItemBook.vue";
 import NavbarComponent from "@/components/NavbarApp.vue";
+import { notify } from "../utils/general";
 export default {
   components: {
     "item-libro": ItemBookComponent,
     "header-navegacion": NavbarComponent,
   },
   created() {
-    if (!this.$store.getters.filterBy || !this.$store.getters.filterValue) {
-      alert("El filterBy o el filterValue se encuentra vacio, verificar");
+    const { filterBy, filterValue } = this.$route.query;
+    if (!filterBy && !filterValue) {
       this.$router.push("/SearchBook");
+      notify(
+        this,
+        "error",
+        "Error",
+        "The filter by type or the value is empty, check"
+      );
+    } else {
+      this.$store.dispatch("setFilterBy", filterBy);
+      this.$store.dispatch("setFilterValue", filterValue);
     }
   },
   computed: {
@@ -72,17 +83,14 @@ export default {
     },
   },
   mounted() {
-    this.updateListBooks();
-    // if (!this.$store.getters.allBooks.length) {
-    //   this.updateListBooks();
-    // }
+    !this.$store.state.books.length && this.updateListBooks();
   },
   methods: {
     setKeyDetailsAndGoTo(item) {
       const { key } = item;
       const vm = this;
       vm.$store.dispatch("setKeyDetailsBook", key);
-      vm.$router.push("/DetailsBook");
+      vm.$router.push({ path: "/DetailsBook", query: { key } });
     },
     updateListBooks() {
       this.$store.dispatch("setListBooks", []);

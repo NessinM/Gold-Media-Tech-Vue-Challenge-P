@@ -37,7 +37,7 @@
             >
               <small class="font-bold">
                 <i class="fas fa-star"></i>
-                Add
+                ADD
               </small>
             </button>
             <button
@@ -47,7 +47,7 @@
             >
               <small class="font-bold">
                 <i class="fas fa-star"></i>
-                Remove
+                REMOVE
               </small>
             </button>
           </div>
@@ -57,6 +57,7 @@
   </div>
 </template>
 <script>
+import { notify } from "../utils/general";
 export default {
   props: {
     item: {
@@ -81,13 +82,37 @@ export default {
     this.checkStatusFavorite();
   },
   methods: {
-    async addFavorite() {
-      await this.$store.dispatch("addFavorite", this.item);
-      this.checkStatusFavorite();
+    addFavorite() {
+      this.$store
+        .dispatch("addFavorite", this.item)
+        .then(() => {
+          notify(
+            this,
+            "success",
+            "Exito",
+            `The book ${this.item.title} was added to favorites`
+          );
+          this.checkStatusFavorite();
+        })
+        .catch((error) => {
+          notify(this, "error", "Error", error);
+        });
     },
-    async removeFavorite() {
-      await this.$store.dispatch("removeFavorite", this.item);
-      this.checkStatusFavorite();
+    removeFavorite() {
+      this.$store
+        .dispatch("removeFavorite", this.item)
+        .then(() => {
+          notify(
+            this,
+            "success",
+            "Exito",
+            `The book ${this.item.title} was removed from favorites`
+          );
+          this.checkStatusFavorite();
+        })
+        .catch((error) => {
+          notify(this, "error", "Error", error);
+        });
     },
     checkStatusFavorite() {
       const pos = this.$store.state.favorites.findIndex(

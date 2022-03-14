@@ -1,6 +1,11 @@
 <template>
   <div>
-    <header-navegacion class="mb-6"></header-navegacion>
+    <notifications class="mt-20" position="top center" />
+    <header-navegacion
+      :show-home="true"
+      :show-back="true"
+      class="mb-6"
+    ></header-navegacion>
     <div class="mx-auto px-6">
       <div
         class="flex items-center justify-center"
@@ -65,7 +70,7 @@
                 font-bold
               "
             >
-              <span class="">Fecha de creacion: </span>
+              <span class="">Creation date: </span>
               <span class="leading-none text-red-500">{{
                 getterDetailsBook.created.value | parseIsoDatetime
               }}</span>
@@ -87,7 +92,7 @@
           >
             <small class="font-bold">
               <i class="fas fa-star"></i>
-              Add
+              ADD
             </small>
           </button>
           <button
@@ -97,7 +102,24 @@
           >
             <small class="font-bold">
               <i class="fas fa-star"></i>
-              Remove
+              REMOVE
+            </small>
+          </button>
+          <button
+            @click="getDetailsBook()"
+            class="
+              h-8
+              w-40
+              text-white
+              rounded-md
+              bg-blue-500
+              hover:bg-blue-600
+              ml-3
+            "
+          >
+            <small class="font-bold">
+              <i class="fas fa-sync"></i>
+              UPDATE DETAILS
             </small>
           </button>
         </div>
@@ -107,15 +129,41 @@
 </template>
 <script>
 import NavbarComponent from "@/components/NavbarApp.vue";
+import { notify } from "../utils/general";
 export default {
+  components: {
+    "header-navegacion": NavbarComponent,
+  },
+  created() {
+    const { key } = this.$route.query;
+    if (!key) {
+      notify(
+        this,
+        "error",
+        "Error",
+        "The book key is invalid please verify"
+      );
+      this.$router.push("/books");
+    } else {
+      this.$store.dispatch("setKeyDetailsBook", key);
+      if (this.$store.getters.getKeyBookDetails) {
+        this.getDetailsBook();
+      } else {
+        notify(
+          this,
+          "error",
+          "Error",
+          "The book key is invalid please verify"
+        );
+        this.$router.push("/books");
+      }
+    }
+  },
   data() {
     return {
       showAddFavorite: false,
       showRemoveFavorite: false,
     };
-  },
-  components: {
-    "header-navegacion": NavbarComponent,
   },
   filters: {
     parseIsoDatetime(dtstr) {
@@ -142,32 +190,60 @@ export default {
       return this.$store.getters.transaction;
     },
   },
-  created() {
-    if (this.$store.getters.getKeyBookDetails) {
-      this.$store
-        .dispatch("getDetailsBook")
-        .then(() => {
-          this.checkStatusFavorite();
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    } else {
-      alert(`El key del libro es invalido por favor verificar`);
-      this.$router.push("/books");
-    }
-  },
   methods: {
+    checkBookInList(callback) {
+      const existe = this.$store.getters.allBooks.findIndex(
+        (e) => e.key === this.$store.getters.getKeyBookDetails
+      );
+      if (existe !== -1) {
+        callback(null, this.$store.getters.allBooks[existe]);
+      } else {
+        callback(
+          new Error(
+            "Este libro no se encuentra en el store, se tiene que programar un get para traer la data y recien guardarlo en el store de favoritos"
+          )
+        );
+      }
+    },
     addFavorite() {
-      this.$store.dispatch("addFavorite", this.getterDetailsBook);
-      this.checkStatusFavorite();
+      this.checkBookInList((err, dataBook) => {
+        if (err) {
+          notify(this, "error", "Error", err);
+        } else {
+          this.$store
+            .dispatch("addFavorite", dataBook)
+            .then(() => {
+              notify(
+                this,
+                "success",
+                "Exito",
+                `The book ${this.getterDetailsBook.title} was added to favorites`
+              );
+              this.checkStatusFavorite();
+            })
+            .catch((error) => {
+              notify(this, "error", "Error", error);
+            });
+        }
+      });
     },
     removeFavorite() {
-      this.$store.dispatch("removeFavorite", this.getterDetailsBook);
-      this.checkStatusFavorite();
+      this.$store
+        .dispatch("removeFavorite", this.getterDetailsBook)
+        .then(() => {
+          notify(
+            this,
+            "success",
+            "Exito",
+            `The book ${this.getterDetailsBook.title} was removed from favorites`
+          );
+          this.checkStatusFavorite();
+        })
+        .catch((error) => {
+          notify(this, "error", "Error", error);
+        });
     },
     checkStatusFavorite() {
-      console.log("verificacion de estorag");
       const details = this.$store.getters.getBookDetails;
       const pos = this.$store.state.favorites.findIndex(
         (e) => e.key === details.key
@@ -179,6 +255,16 @@ export default {
         this.showAddFavorite = true;
         this.showRemoveFavorite = false;
       }
+    },
+    getDetailsBook() {
+      this.$store
+        .dispatch("getDetailsBook")
+        .then(() => {
+          this.checkStatusFavorite();
+        })
+        .catch((err) => {
+          this.$router.push("/books");
+        });
     },
   },
 };

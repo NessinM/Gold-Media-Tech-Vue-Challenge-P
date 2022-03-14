@@ -1,6 +1,7 @@
 <template>
   <div>
-    <header-navegacion class="mb-6"></header-navegacion>
+    <notifications class="mt-20"  position="top center" />
+    <header-navegacion :show-home="true" class="mb-6"></header-navegacion>
     <div class="mx-auto px-4">
       <template>
         <div
@@ -49,8 +50,8 @@ export default {
       const { key } = item;
       const vm = this;
       vm.$store.dispatch("setKeyDetailsBook", key);
-      vm.$router.push("/DetailsBook");
-    },
+      vm.$router.push({ path: "/DetailsBook", query: { key } });
+    }
   },
 };
 </script>
